@@ -1,0 +1,7 @@
+{
+    "chat.mcp.serverSampling": {
+        "dcs-miz/.vscode/mcp.json: local": {
+            "allowedDuringChat": true
+        }
+    }
+}
