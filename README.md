@@ -19,20 +19,7 @@
 
 ## 🛠️ 安装与配置
 
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/wu-yafeng/dcs-miz-translate-mcp.git
-cd dcs-miz-translate-mcp
-```
-
-### 2. 构建项目
-
-```bash
-dotnet build src/DcsMizTranslate/DcsMizTranslate.csproj
-```
-
-### 3. 配置 MCP 客户端
+### 1. 配置 MCP 客户端
 
 在您的 MCP 客户端配置文件中添加以下配置：
 
@@ -105,6 +92,18 @@ dcs-miz-translate-mcp/
 ├── artifacts/                # 翻译结果输出目录
 └── README.md
 ```
+## 从源代码生成
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/wu-yafeng/dcs-miz-translate-mcp.git
+cd dcs-miz-translate-mcp
+```
+
+### 2. 本地调试
+
+[README](src/DcsMizTranslate/README.md)
 
 ## 🔧 工作原理
 
