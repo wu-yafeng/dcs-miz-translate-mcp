@@ -2,5 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/DcsMizTranslate/DcsMizTranslate.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/UnitTests/UnitTests.csproj" />
+  </Folder>
 </Solution>

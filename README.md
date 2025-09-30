@@ -42,7 +42,7 @@ dotnet build src/DcsMizTranslate/DcsMizTranslate.csproj
     "dcs-miz-translate": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["DcsMizTranslate@0.1.0-beta", "--yes"]
+      "args": ["DcsMizTranslate@0.2.0-beta", "--yes"]
     }
   },
   "inputs": []
@@ -56,7 +56,7 @@ dotnet build src/DcsMizTranslate/DcsMizTranslate.csproj
     "dcs-miz-translate": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["DcsMizTranslate@0.1.0-beta", "--yes"]
+      "args": ["DcsMizTranslate@0.2.0-beta", "--yes"]
     }
   }
 }

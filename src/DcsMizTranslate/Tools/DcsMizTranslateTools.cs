@@ -25,11 +25,10 @@ public class DcsMizTranslateTools
     public async Task<AIContent> TranslateMizFileAsync(
         McpServer thisServer,
         IProgress<ProgressNotificationValue> progress,
+        IEnumerable<IEntriesProvider> entriesProviders,
         [Description("The path of .miz file.")] string filePath,
         [Description("The language code translate to. For exmaple: CN")] string languageCode, CancellationToken cancellationToken = default)
     {
-        var entries = await GetResourceEntriesAsync(filePath, cancellationToken);
-
         var cacheFilePath = Path.Combine(SpecialDirectories.MyDocuments,
             "DCSMizTranslate",
             languageCode,
@@ -37,22 +36,26 @@ public class DcsMizTranslateTools
 
         var cache = await GetCachedEntriesAsync(cacheFilePath, cancellationToken);
 
-        var task = TranslateAsync(thisServer, progress, entries, cache, languageCode, cancellationToken);
+        foreach (var provider in entriesProviders)
+        {
+            var entries = await provider.GetEntriesAsync(filePath, cancellationToken);
 
-        try
-        {
-            await task;
-        }
-        catch (Exception ex)
-        {
-            return new ErrorContent("Translation failed: " + ex.Message);
-        }
-        finally
-        {
-            await File.WriteAllTextAsync(cacheFilePath, JsonSerializer.Serialize(cache, _jsonOptions), cancellationToken);
-        }
+            var task = TranslateAsync(provider.Name, thisServer, progress, entries, cache, languageCode, cancellationToken);
+            try
+            {
+                await task;
+            }
+            catch (Exception ex)
+            {
+                return new ErrorContent("Translation failed: " + ex.Message);
+            }
+            finally
+            {
+                await File.WriteAllTextAsync(cacheFilePath, JsonSerializer.Serialize(cache, _jsonOptions), cancellationToken);
+            }
 
-        await WriteTranslatedEntriesAsync(filePath, languageCode, entries, cancellationToken);
+            await provider.WriteEntriesAsync(filePath, languageCode, entries, cancellationToken);
+        }
 
         return new TextContent("Translate completed. The cache file written to: " + cacheFilePath);
     }
@@ -73,42 +76,9 @@ public class DcsMizTranslateTools
 
         return JsonSerializer.Deserialize<Dictionary<string, string>>(await File.ReadAllTextAsync(filePath, cancellationToken), _jsonOptions) ?? [];
     }
-
-    private async Task<Dictionary<string, string>> GetResourceEntriesAsync(string filePath, CancellationToken cancellationToken)
-    {
-        using var mizArchive = ZipFile.OpenRead(filePath);
-
-        var defaultLocalizationEntry = mizArchive.GetEntry("l10n/DEFAULT/dictionary");
-
-        if (defaultLocalizationEntry == null)
-        {
-            return [];
-        }
-
-        using var stream = defaultLocalizationEntry.Open();
-        using var reader = new StreamReader(stream);
-        var content = await reader.ReadToEndAsync(cancellationToken);
-        using var lua = new Lua();
-
-        lua.DoString(content);
-
-        var result = new Dictionary<string, string>();
-
-        if (lua["dictionary"] is LuaTable table)
-        {
-            foreach (string key in table.Keys)
-            {
-                if (table[key] is string s)
-                {
-                    result.TryAdd(key, s);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private async Task TranslateAsync(McpServer thisServer,
+    private async Task TranslateAsync(
+        string providerName,
+        McpServer thisServer,
         IProgress<ProgressNotificationValue> progress,
         Dictionary<string, string> entries,
         Dictionary<string, string> cache,
@@ -116,9 +86,17 @@ public class DcsMizTranslateTools
         CancellationToken cancellationToken = default)
     {
         var prompt = """
-             - 不要翻译专有名词 如 飞机的呼号 等
-             - 不要包含任何其他文本内容
-             - 格式与输入相同
+             你是一个美国军事翻译专家，精通军事任务相关知识，下面是跟美国战斗机任务（DCS模拟飞行游戏）相关的英语，翻译成简体中文，要求：
+             - 优先识别文本中的人名和呼号或者代号，保持原文不翻译，再翻译其他部分
+             - 纯文本输出
+             - 保持原文的换行格式
+             - 仅作为翻译不要续写
+             - 原文和翻译词数不能相差过大
+             - 仅输出翻译结果，不注释不解释
+             - 俚语直译（如“Break left!”→“向左急转！”；“Light”→“导弹”；“hot”→“迎头”；“cold”→“尾追”；“angels”→“高度”）
+             - 坐标格式（如“three-four-zero at sixty”→“340度60海里”）；呼号格式（如“Anvil one-two”→“Anvil 1-2”）
+             - 遵守单位强制（如“20 miles”→“20海里”）
+             - 特殊代号（如“rock”保持原文）
             """;
 
         var options = new ChatOptions()
@@ -136,7 +114,7 @@ public class DcsMizTranslateTools
             {
                 Progress = current++,
                 Total = contents.Count,
-                Message = $"Translating entry [{current}/{contents.Count}]"
+                Message = $"Translating {providerName} [{current}/{contents.Count}]"
             });
 
             if (cache.TryGetValue(content, out var cachedTranslation))
@@ -164,33 +142,5 @@ public class DcsMizTranslateTools
                 entries[entry.Key] = translated;
             }
         }
-    }
-
-
-    private async Task WriteTranslatedEntriesAsync(string filePath,
-            string languageCode,
-            Dictionary<string, string> translatedEntries,
-            CancellationToken cancellationToken = default)
-    {
-        var luaTable = "dictionary = {\n";
-        foreach (var kvp in translatedEntries)
-        {
-            var key = kvp.Key.Replace("\"", "\\\"");
-            var value = kvp.Value.Replace("\"", "\\\"").Replace("\n", "\\n");
-            luaTable += $"    [\"{key}\"] = \"{value}\",\n";
-        }
-        luaTable += "}";
-
-        using var mizArchive = ZipFile.Open(filePath, ZipArchiveMode.Update);
-
-        var entryPath = $"l10n/{languageCode}/dictionary";
-        var existingEntry = mizArchive.GetEntry(entryPath);
-        existingEntry?.Delete();
-
-        var newEntry = mizArchive.CreateEntry(entryPath);
-
-        using var entryStream = newEntry.Open();
-        using var writer = new StreamWriter(entryStream);
-        await writer.WriteAsync(luaTable);
     }
 }

@@ -1,5 +1,7 @@
+using DcsMizTranslate;
 using DcsMizTranslate.Tools;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -13,5 +15,9 @@ builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
     .WithTools<DcsMizTranslateTools>();
+
+builder.Services.AddSingleton<IEntriesProvider, DictionaryEntriesProvider>();
+
+builder.Services.AddSingleton<IEntriesProvider, LuaTokenEntriesProvider>();
 
 await builder.Build().RunAsync();

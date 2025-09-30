@@ -76,7 +76,7 @@ For both VS Code and Visual Studio, the configuration file uses the following se
       "args": [
         "DcsMizTranslate",
         "--version",
-        "0.1.0-beta",
+        "0.2.0-beta",
         "--yes"
       ]
     }

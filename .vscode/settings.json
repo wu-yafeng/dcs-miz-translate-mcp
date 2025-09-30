@@ -1,6 +1,6 @@
 {
     "chat.mcp.serverSampling": {
-        "dcs-miz/.vscode/mcp.json: local": {
+        "dcs-miz/.vscode/mcp.json: DcsMizTranslate": {
             "allowedDuringChat": true
         }
     }
