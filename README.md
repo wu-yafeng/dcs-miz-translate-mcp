@@ -9,6 +9,7 @@
 - **多语言支持**: 支持翻译为多种语言（如中文 CN）
 - **MCP 协议支持**: 基于 Model Context Protocol，可与支持 MCP 的 AI 客户端集成
 - **专有名词保护**: 自动识别并保护飞机呼号等专有名词不被翻译
+- **Lua 脚本翻译支持**: 支持翻译任务附带的 Lua 脚本（需手动替换到 DEFAULT 目录）
 
 ## 📋 系统要求
 
@@ -82,6 +83,12 @@ dotnet build src/DcsMizTranslate/DcsMizTranslate.csproj
 
 - `CN` - 中文（简体）
 - 可根据需要扩展其他语言代码
+
+### Lua 脚本翻译
+
+1. 当工具完成后,会在 miz 文件中的本地化目录添加翻译后的lua文件
+2. 先备份你 miz 文件中的 DEFAULT 目录下的lua
+3. 将本地化目录的 lua 复制到DEFAULT目录并替换
 
 ## 📁 项目结构
 
