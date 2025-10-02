@@ -30,7 +30,7 @@
     "dcs-miz-translate": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["DcsMizTranslate@0.2.0-beta", "--yes"]
+      "args": ["DcsMizTranslate@0.3.0-beta", "--yes"]
     }
   },
   "inputs": []
@@ -44,7 +44,7 @@
     "dcs-miz-translate": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["DcsMizTranslate@0.2.0-beta", "--yes"]
+      "args": ["DcsMizTranslate@0.3.0-beta", "--yes"]
     }
   }
 }

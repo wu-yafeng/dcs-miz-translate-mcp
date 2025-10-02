@@ -106,7 +106,8 @@ public class DcsMizTranslateTools
 
         var current = 0;
 
-        var contents = entries.Where(x => !x.Key.StartsWith("DictKey_ActionRadioText") && x.Value.Length > 15).Select(x => x.Value).Distinct().ToList();
+
+        var contents = entries.Where(ShouldTranslate).Select(x => x.Value).Distinct().ToList();
 
         foreach (var content in contents)
         {
@@ -142,5 +143,30 @@ public class DcsMizTranslateTools
                 entries[entry.Key] = translated;
             }
         }
+    }
+
+    private bool ShouldTranslate(KeyValuePair<string, string> kvp)
+    {
+
+        string[] doNotTranslateKeyPrefix = [
+            "DictKey_ActionRadioText_",
+            "DictKey_GroupName_",
+            "DictKey_UnitName_",
+            "DictKey_WptName_"
+        ];
+
+        const int minLength = 15;
+
+        if (doNotTranslateKeyPrefix.Any(kvp.Key.StartsWith))
+        {
+            return false;
+        }
+
+        if (kvp.Value.Length < minLength)
+        {
+            return false;
+        }
+
+        return true;
     }
 }
