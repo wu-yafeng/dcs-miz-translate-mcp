@@ -63,17 +63,20 @@ public partial class LuaTokenEntriesProvider : IEntriesProvider
             }
 
             var tokenMatch = GetConstantStringValMatcher();
-            replacedText = tokenMatch.Replace(expr, m =>
+            var newExpr = tokenMatch.Replace(expr, m =>
             {
+                var wrapper = m.Value[0];
                 if (replaceTokens.TryGetValue(m.Index, out var newValue))
                 {
-                    return $"\"{newValue}\"";
+                    return $"{wrapper}{newValue}{wrapper}";
                 }
                 else
                 {
                     return m.Value;
                 }
             });
+
+            replacedText = $"{Name} = {newExpr}";
 
             return true;
         }
@@ -122,7 +125,9 @@ public partial class LuaTokenEntriesProvider : IEntriesProvider
             // - "Hello"..myvar.."!"  -> [ "Hello", "!" ]
             // - "Hello World" -> [ "Hello World" ]
             // - var2 -> []
-            var tokenMatch = new Regex("\"(?<text>(?:[^\"\\\\]|\\\\.)*)\"");
+            // 'Hello'..myvar..'!'  -> [ 'Hello', '!' ]
+            // 'Hello World' -> [ 'Hello World' ]
+            var tokenMatch = GetConstantStringValMatcher();
             var constants = tokenMatch.Matches(expr)
                 .Select(m => m.Groups["text"].Value)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -131,7 +136,7 @@ public partial class LuaTokenEntriesProvider : IEntriesProvider
             return constants;
         }
 
-        [GeneratedRegex("\"(?<text>(?:[^\"\\\\]|\\\\.)*)\"")]
+        [GeneratedRegex("[\"'](?<text>(?:[^\"\\\\]|\\\\.)*)[\"']", RegexOptions.Compiled)]
         private static partial Regex GetConstantStringValMatcher();
     }
 
