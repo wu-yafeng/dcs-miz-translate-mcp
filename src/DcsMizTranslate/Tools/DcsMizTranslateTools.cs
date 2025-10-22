@@ -1,3 +1,4 @@
+
 using System;
 using System.Buffers;
 using System.ComponentModel;
@@ -12,8 +13,7 @@ using ModelContextProtocol.Server;
 
 namespace DcsMizTranslate.Tools;
 
-public record ContentResult(string TranslatedContent);
-public class DcsMizTranslateTools
+public class DcsMizTranslateTools(McpServer thisServer, IConfiguration configuration, IEnumerable<IEntriesProvider> entriesProviders)
 {
     private readonly static JsonSerializerOptions _jsonOptions = new()
     {
@@ -23,9 +23,7 @@ public class DcsMizTranslateTools
     [McpServerTool]
     [Description("Translate the specified .miz file.")]
     public async Task<AIContent> TranslateMizFileAsync(
-        McpServer thisServer,
         IProgress<ProgressNotificationValue> progress,
-        IEnumerable<IEntriesProvider> entriesProviders,
         [Description("The path of .miz file.")] string filePath,
         [Description("The language code translate to. For exmaple: CN")] string languageCode, CancellationToken cancellationToken = default)
     {
@@ -40,7 +38,7 @@ public class DcsMizTranslateTools
         {
             var entries = await provider.GetEntriesAsync(filePath, cancellationToken);
 
-            var task = TranslateAsync(provider.Name, thisServer, progress, entries, cache, languageCode, cancellationToken);
+            var task = TranslateAsync(provider.Name, progress, entries, cache, languageCode, cancellationToken);
             try
             {
                 await task;
@@ -78,7 +76,6 @@ public class DcsMizTranslateTools
     }
     private async Task TranslateAsync(
         string providerName,
-        McpServer thisServer,
         IProgress<ProgressNotificationValue> progress,
         Dictionary<string, string> entries,
         Dictionary<string, string> cache,
@@ -86,7 +83,7 @@ public class DcsMizTranslateTools
         CancellationToken cancellationToken = default)
     {
         var prompt = """
-             你是一个美国军事翻译专家，精通军事任务相关知识，下面是跟美国战斗机任务（DCS模拟飞行游戏）相关的英语，翻译成简体中文，要求：
+             你是一个美国军事翻译专家，精通军事任务相关知识，下面是跟美国战斗机任务（DCS模拟飞行游戏）相关的英语，翻译成目标语言，要求：
              - 优先识别文本中的人名和呼号或者代号，保持原文不翻译，再翻译其他部分
              - 纯文本输出
              - 保持原文的换行格式
@@ -102,6 +99,7 @@ public class DcsMizTranslateTools
         var options = new ChatOptions()
         {
             Instructions = prompt,
+            ModelId = configuration["Model"],
         };
 
         var current = 0;
@@ -123,12 +121,14 @@ public class DcsMizTranslateTools
                 continue;
             }
 
+            var useJsonFormat = configuration.GetValue("UseJsonResponseFormat", false);
+
             var response = await thisServer.AsSamplingChatClient()
-                .GetResponseAsync<ContentResult>($"Translate content to {languageCode}: '{content}'", options, cancellationToken: cancellationToken);
+                .GetResponseAsync<string>($"Translate following content to {languageCode}: \n{content}", options, useJsonFormat, cancellationToken: cancellationToken);
 
             if (response.TryGetResult(out var r))
             {
-                cache[content] = r.TranslatedContent;
+                cache[content] = r;
             }
             else
             {
