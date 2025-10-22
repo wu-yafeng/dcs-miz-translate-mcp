@@ -10,6 +10,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.VisualBasic.FileIO;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
+using Microsoft.Extensions.Configuration;
 
 namespace DcsMizTranslate.Tools;
 

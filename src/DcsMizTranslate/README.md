@@ -1,98 +1,161 @@
-# MCP Server
+# DCS Miz Translate MCP
 
-This README was created using the C# MCP server project template.
-It demonstrates how you can easily create an MCP server using C# and publish it as a NuGet package.
+一个用于翻译 DCS (Digital Combat Simulator) .miz 任务文件的 Model Context Protocol (MCP) 服务器。
 
-The MCP server is built as a self-contained application and does not require the .NET runtime to be installed on the target machine.
-However, since it is self-contained, it must be built for each target platform separately.
-By default, the template is configured to build for:
-* `win-x64`
-* `win-arm64`
-* `osx-arm64`
-* `linux-x64`
-* `linux-arm64`
-* `linux-musl-x64`
+## 🚀 功能特性
 
-If your users require more platforms to be supported, update the list of runtime identifiers in the project's `<RuntimeIdentifiers />` element.
+- **自动翻译 DCS 任务文件**: 支持将 .miz 文件中的文本内容翻译为目标语言
+- **智能缓存系统**: 避免重复翻译相同内容，提高效率
+- **多语言支持**: 支持翻译为多种语言（如中文 CN）
+- **MCP 协议支持**: 基于 Model Context Protocol，可与支持 MCP 的 AI 客户端集成
+- **专有名词保护**: 自动识别并保护飞机呼号等专有名词不被翻译
+- **Lua 脚本翻译支持**: 支持翻译任务附带的 Lua 脚本（需手动替换到 DEFAULT 目录）
 
-See [aka.ms/nuget/mcp/guide](https://aka.ms/nuget/mcp/guide) for the full guide.
+## 📋 系统要求
 
-Please note that this template is currently in an early preview stage. If you have feedback, please take a [brief survey](http://aka.ms/dotnet-mcp-template-survey).
+- .NET 9.0 或更高版本
+- Windows、macOS 或 Linux
+- 支持 MCP 的 AI 客户端（如 Claude Desktop、VS Code Copilot 等）
 
-## Checklist before publishing to NuGet.org
+## 🛠️ 安装与配置
 
-- Test the MCP server locally using the steps below.
-- Update the package metadata in the .csproj file, in particular the `<PackageId>`.
-- Update `.mcp/server.json` to declare your MCP server's inputs.
-  - See [configuring inputs](https://aka.ms/nuget/mcp/guide/configuring-inputs) for more details.
-- Pack the project using `dotnet pack`.
+### 1. 配置 MCP 客户端
 
-The `bin/Release` directory will contain the package file (.nupkg), which can be [published to NuGet.org](https://learn.microsoft.com/nuget/nuget-org/publish-a-package).
+在您的 MCP 客户端配置文件中添加以下配置：
 
-## Developing locally
-
-To test this MCP server from source code (locally) without using a built MCP server package, you can configure your IDE to run the project directly using `dotnet run`.
-
+#### VS Code (.vscode/mcp.json)
 ```json
 {
   "servers": {
-    "DcsMizTranslate": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "<PATH TO PROJECT DIRECTORY>"
-      ]
-    }
-  }
-}
-```
-
-## Testing the MCP Server
-
-Once configured, you can ask Copilot Chat for a random number, for example, `Give me 3 random numbers`. It should prompt you to use the `get_random_number` tool on the `DcsMizTranslate` MCP server and show you the results.
-
-## Publishing to NuGet.org
-
-1. Run `dotnet pack -c Release` to create the NuGet package
-2. Publish to NuGet.org with `dotnet nuget push bin/Release/*.nupkg --api-key <your-api-key> --source https://api.nuget.org/v3/index.json`
-
-## Using the MCP Server from NuGet.org
-
-Once the MCP server package is published to NuGet.org, you can configure it in your preferred IDE. Both VS Code and Visual Studio use the `dnx` command to download and install the MCP server package from NuGet.org.
-
-- **VS Code**: Create a `<WORKSPACE DIRECTORY>/.vscode/mcp.json` file
-- **Visual Studio**: Create a `<SOLUTION DIRECTORY>\.mcp.json` file
-
-For both VS Code and Visual Studio, the configuration file uses the following server definition:
-
-```json
-{
-  "servers": {
-    "DcsMizTranslate": {
+    "dcs-miz-translate": {
       "type": "stdio",
       "command": "dnx",
-      "args": [
-        "DcsMizTranslate",
-        "--version",
-        "0.3.0-beta",
-        "--yes"
-      ]
+      "args": ["DcsMizTranslate@0.4.0-beta", "--yes"]
+    }
+  },
+  "inputs": []
+}
+```
+
+#### Claude Desktop
+```json
+{
+  "mcpServers": {
+    "dcs-miz-translate": {
+      "type": "stdio",
+      "command": "dnx",
+      "args": ["DcsMizTranslate@0.4.0-beta", "--yes"]
     }
   }
 }
 ```
 
-## More information
+## 🎯 使用方法
 
-.NET MCP servers use the [ModelContextProtocol](https://www.nuget.org/packages/ModelContextProtocol) C# SDK. For more information about MCP:
+### 基本用法
 
-- [Official Documentation](https://modelcontextprotocol.io/)
-- [Protocol Specification](https://spec.modelcontextprotocol.io/)
-- [GitHub Organization](https://github.com/modelcontextprotocol)
+在支持 MCP 的 AI 客户端中使用以下命令：
 
-Refer to the VS Code or Visual Studio documentation for more information on configuring and using MCP servers:
+```
+#translate_miz_file  翻译 #file:任务文件名.miz 为中文
+```
 
-- [Use MCP servers in VS Code (Preview)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
-- [Use MCP servers in Visual Studio (Preview)](https://learn.microsoft.com/visualstudio/ide/mcp-servers)
+### 示例
+
+```
+#translate_miz_file 翻译 #file:Dynamic mission 1400.miz 为中文
+```
+
+### 支持的语言代码
+
+- `CN` - 中文（简体）
+- 可根据需要扩展其他语言代码
+
+### Lua 脚本翻译
+
+1. 当工具完成后,会在 miz 文件中的本地化目录添加翻译后的lua文件
+2. 先备份你 miz 文件中的 DEFAULT 目录下的lua
+3. 将本地化目录的 lua 复制到DEFAULT目录并替换
+
+## 📁 项目结构
+
+```
+dcs-miz-translate-mcp/
+├── .vscode/
+│   └── mcp.json              # VS Code MCP 配置
+├── src/
+│   └── DcsMizTranslate/
+│       ├── DcsMizTranslate.csproj
+│       ├── Program.cs        # 应用程序入口点
+│       └── Tools/
+│           └── DcsMizTranslateTools.cs  # 核心翻译工具
+├── artifacts/                # 翻译结果输出目录
+└── README.md
+```
+## 从源代码生成
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/wu-yafeng/dcs-miz-translate-mcp.git
+cd dcs-miz-translate-mcp
+```
+
+### 2. 本地调试
+
+[README](src/DcsMizTranslate/README.md)
+
+## 🔧 工作原理
+
+1. **解压缩 .miz 文件**: .miz 文件本质上是包含任务数据的 ZIP 压缩包
+2. **提取本地化资源**: 从 `l10n/DEFAULT/dictionary` 文件中提取可翻译文本
+3. **智能翻译**: 使用 AI 服务翻译文本，同时保护专有名词
+4. **缓存优化**: 将翻译结果缓存到本地，避免重复翻译
+5. **写入翻译结果**: 将翻译后的内容写入 .miz 文件的对应语言目录
+
+## 📝 技术栈
+
+- **.NET 9.0**: 主要开发框架
+- **Model Context Protocol (MCP)**: 协议支持
+- **NLua**: Lua 脚本解析（用于处理 DCS 字典文件）
+- **System.IO.Compression**: ZIP 文件处理
+- **Microsoft.Extensions.AI**: AI 服务集成
+
+## 🔍 翻译规则
+
+- 不翻译专有名词（如飞机呼号）
+- 过滤短文本（长度 < 15 字符）
+- 跳过特定前缀的条目（如 `DictKey_ActionRadioText`）
+- 保持原始格式和结构
+
+## 📊 缓存系统
+
+翻译结果缓存在以下位置：
+- Windows: `%USERPROFILE%\Documents\DCSMizTranslate\{语言代码}\cache.json`
+- macOS/Linux: `~/Documents/DCSMizTranslate/{语言代码}/cache.json`
+
+## 🤝 贡献指南
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🆘 问题排查
+
+### 常见问题
+
+1. **翻译失败**: 检查 .miz 文件格式是否正确
+2. **缓存问题**: 删除缓存文件后重试
+3. **权限问题**: 确保对文档目录有写入权限
+
+### 获取帮助
+
+- 提交 [Issue](https://github.com/wu-yafeng/dcs-miz-translate-mcp/issues)
+
+**注意**: 本工具仅用于学习和研究目的。请确保遵守 DCS 的使用条款和版权规定。
