@@ -205,7 +205,7 @@ public partial class LuaTokenEntriesProvider : IEntriesProvider
                 var content = await reader.ReadLineAsync(cancellationToken);
 
                 var translatedTokens = entries.Where(x => x.Key.StartsWith($"{entry.FullName}#{rowNum}@"))
-                    .ToDictionary(x => int.Parse(x.Key.Replace($"{entry.FullName}#{rowNum}@", string.Empty)), x => x.Value);
+                    .ToDictionary(x => int.Parse(x.Key.Replace($"{entry.FullName}#{rowNum}@", string.Empty)), x => x.Value.Replace("\"", "\\\"").Replace("\n", "\\n"));
 
                 if (translatedTokens.Count == 0 || string.IsNullOrEmpty(content))
                 {
